@@ -1,0 +1,1 @@
+.toolbar-actions{display:flex;gap:8px;align-items:center}.toolbar-actions .secondary{white-space:nowrap}@media(max-width:900px){.toolbar{grid-template-columns:1fr}.toolbar-actions{flex-wrap:wrap}.toolbar-actions .secondary{flex:1}}

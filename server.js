@@ -113,6 +113,17 @@ async function api(req, res, url) {
   if (req.method === 'GET' && url.pathname === '/api/me') return json(res, 200, { user });
   const data = readData();
   if (req.method === 'GET' && url.pathname === '/api/state') return json(res, 200, { vehicles: data.vehicles.map(decorate), history: data.history, checklistTemplate: CHECKLIST });
+  if (req.method === 'GET' && url.pathname === '/api/backup') {
+    if (user.role !== 'admin') return json(res, 403, { error: 'Apenas o administrador pode fazer backup.' });
+    return json(res, 200, { version: 1, system: 'Controle de Pátio Diversos Print', exportedAt: new Date().toISOString(), data });
+  }
+  if (req.method === 'POST' && url.pathname === '/api/backup/restore') {
+    if (user.role !== 'admin') return json(res, 403, { error: 'Apenas o administrador pode restaurar backup.' });
+    const input = await body(req); const restored = input?.data || input;
+    if (!restored || !Array.isArray(restored.vehicles) || !Array.isArray(restored.history)) return json(res, 400, { error: 'Arquivo de backup inválido.' });
+    const safeData = { vehicles: restored.vehicles.map(v => ({ ...v, checklist: makeChecklist(v.checklist) })), history: restored.history.slice(0, 500), updatedAt: new Date().toISOString() };
+    saveData(safeData); return json(res, 200, { ok: true, vehicles: safeData.vehicles.length });
+  }
   if (req.method === 'POST' && url.pathname === '/api/vehicles') {
     const input = await body(req); const p = plate(input.plate);
     if (!p) return json(res, 400, { error: 'Informe a placa.' });
