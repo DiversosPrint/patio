@@ -32,7 +32,7 @@ function renderMetrics() {
     { value: pendingArea('documentacao'), label: 'Documentos pendentes', icon: '▤', tone: 'red', signal: true },
     { value: pendingArea('borracharia'), label: 'Pendente de pneus', icon: '◉', tone: 'black', signal: true },
     { value: pendingLabel('Trava do rastreador'), label: 'Trava do rastreador', icon: '⌁', tone: 'cyan', signal: true },
-    { value: pendingLabel('Baú'), label: 'Pendente de Baú', icon: '▱', tone: 'amber', signal: true }
+    { value: pendingLabel('Reparo de baú'), label: 'Reparo de baú pendente', icon: '▱', tone: 'amber', signal: true }
   ];
   $('#metrics').innerHTML = values.map(x => `<div class="metric metric-rich ${x.signal && x.value ? 'has-signal' : ''}"><span class="metric-symbol ${x.tone}">${x.icon}</span><div><b>${x.value}</b><span>${x.label}</span>${x.detail ? `<small>${esc(x.detail)}</small>` : ''}</div></div>`).join('');
 }

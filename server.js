@@ -18,7 +18,7 @@ const USERS = {
 };
 
 const CHECKLIST = {
-  manutencao: ['Sistema elétrico e iluminação', 'Freios e sistema pneumático', 'Suspensão e estrutura', 'Engate e quinta roda', 'Trava do rastreador', 'Baú'],
+  manutencao: ['Sistema elétrico e iluminação', 'Freios e sistema pneumático', 'Suspensão e estrutura', 'Engate e quinta roda', 'Trava do rastreador', 'Reparo de baú'],
   borracharia: ['Pneus e calibragem', 'Estepe', 'Rodas e porcas'],
   documentacao: ['CRLV vigente', 'Licenciamento e multas', 'Documentos operacionais']
 };
