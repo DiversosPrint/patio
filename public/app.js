@@ -21,10 +21,20 @@ function yardDays(vehicle) { const start = new Date(`${vehicle.enteredAt || vehi
 function areaBadge(area, items) { const done = items.filter(x => ['concluido','nao_aplicado'].includes(x.status)).length; const cls = done === items.length ? 'badge-ok' : done ? 'badge-warn' : 'badge-bad'; const short = {documentacao:'DOC',borracharia:'BOR',manutencao:'MAN'}[area] || area.slice(0,3).toUpperCase(); return `<span class="check-badge ${cls}">${short} ${done}/${items.length}</span>`; }
 function render() { renderMetrics(); renderYards(); renderVehicles(); }
 function renderMetrics() {
+  const pendingLabel = label => state.vehicles.filter(v => Object.values(v.checklist || {}).flat().some(i => i.label === label && !['concluido','nao_aplicado'].includes(i.status))).length;
+  const pendingArea = area => state.vehicles.filter(v => (v.checklist?.[area] || []).some(i => !['concluido','nao_aplicado'].includes(i.status))).length;
+  const oldest = state.vehicles.reduce((best, v) => !best || yardDays(v) > yardDays(best) ? v : best, null);
   const values = [
-    [state.vehicles.length, 'Total da frota', ''], [state.vehicles.filter(v => v.available).length, 'Disponíveis para rodar', 'available'], [state.vehicles.filter(v => !v.available).length, 'Com pendências', 'pending'],
-    ...['Cajamar','Jaraguá','Bandeirantes'].map(y => [state.vehicles.filter(v => v.yard === y).length, y, ''])
-  ]; $('#metrics').innerHTML = values.map(x => `<div class="metric ${x[2]}"><b>${x[0]}</b><span>${x[1]}</span></div>`).join('');
+    { value: state.vehicles.length, label: 'Veículos na frota', icon: '▣', tone: 'purple' },
+    { value: state.vehicles.filter(v => !v.available).length, label: 'Em preparação', icon: '🛠', tone: 'blue' },
+    { value: state.vehicles.filter(v => v.available).length, label: 'Prontos para operar', icon: '✓', tone: 'green' },
+    { value: oldest ? `${yardDays(oldest)} dias` : '0 dias', label: 'Há mais tempo no pátio', detail: oldest?.plate || 'Nenhum veículo', icon: '⌛', tone: 'orange' },
+    { value: pendingArea('documentacao'), label: 'Documentos pendentes', icon: '▤', tone: 'red', signal: true },
+    { value: pendingArea('borracharia'), label: 'Pendente de pneus', icon: '◉', tone: 'black', signal: true },
+    { value: pendingLabel('Trava do rastreador'), label: 'Trava do rastreador', icon: '⌁', tone: 'cyan', signal: true },
+    { value: pendingLabel('Baú'), label: 'Pendente de Baú', icon: '▱', tone: 'amber', signal: true }
+  ];
+  $('#metrics').innerHTML = values.map(x => `<div class="metric metric-rich ${x.signal && x.value ? 'has-signal' : ''}"><span class="metric-symbol ${x.tone}">${x.icon}</span><div><b>${x.value}</b><span>${x.label}</span>${x.detail ? `<small>${esc(x.detail)}</small>` : ''}</div></div>`).join('');
 }
 function renderYards() { $('#yardTabs').innerHTML = yards.map(y => `<button class="${activeYard === y ? 'active' : ''}" data-yard="${y}">${y} · ${y === 'Todos' ? state.vehicles.length : state.vehicles.filter(v => v.yard === y).length}</button>`).join(''); }
 function plateHtml(v) { return `<div class="plate ${v.plateType}">${esc(v.plate)}</div>`; }

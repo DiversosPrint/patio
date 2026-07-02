@@ -18,7 +18,7 @@ const USERS = {
 };
 
 const CHECKLIST = {
-  manutencao: ['Sistema elétrico e iluminação', 'Freios e sistema pneumático', 'Suspensão e estrutura', 'Engate e quinta roda'],
+  manutencao: ['Sistema elétrico e iluminação', 'Freios e sistema pneumático', 'Suspensão e estrutura', 'Engate e quinta roda', 'Trava do rastreador', 'Baú'],
   borracharia: ['Pneus e calibragem', 'Estepe', 'Rodas e porcas'],
   documentacao: ['CRLV vigente', 'Licenciamento e multas', 'Documentos operacionais']
 };
@@ -70,7 +70,10 @@ function available(vehicle) {
   const items = Object.values(vehicle.checklist || {}).flat();
   return items.length > 0 && items.every(x => ['concluido', 'nao_aplicado'].includes(x.status));
 }
-function decorate(vehicle) { return { ...vehicle, brand: vehicle.brand || 'Facchini', enteredAt: vehicle.enteredAt || vehicle.createdAt?.slice(0, 10), plateType: plateType(vehicle.plate), available: available(vehicle) }; }
+function decorate(vehicle) {
+  const decorated = { ...vehicle, brand: vehicle.brand || 'Facchini', enteredAt: vehicle.enteredAt || vehicle.createdAt?.slice(0, 10), plateType: plateType(vehicle.plate), checklist: makeChecklist(vehicle.checklist) };
+  return { ...decorated, available: available(decorated) };
+}
 function audit(data, user, action, vehicle, detail = '') {
   data.history.unshift({ id: crypto.randomUUID(), at: new Date().toISOString(), user: user.name, action, vehicleId: vehicle.id, plate: vehicle.plate, detail });
   data.history = data.history.slice(0, 500);
