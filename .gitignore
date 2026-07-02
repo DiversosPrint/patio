@@ -1,0 +1,7 @@
+node_modules/
+.env
+data/fleet.json
+data/*.tmp
+npm-debug.log*
+.DS_Store
+Thumbs.db

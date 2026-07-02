@@ -1,0 +1,9 @@
+{
+  "name": "controle-patio-diversos-print",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Controle interno de carretas da Operação Diversos Print",
+  "main": "server.js",
+  "scripts": { "start": "node server.js", "check": "node --check server.js && node --check public/app.js" },
+  "engines": { "node": ">=18" }
+}

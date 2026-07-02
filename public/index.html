@@ -1,0 +1,22 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Controle de Pátio Diversos Print</title><link rel="stylesheet" href="/styles.css"><link rel="stylesheet" href="/cards.css"><link rel="stylesheet" href="/theme.css"></head><body>
+<section id="loginView" class="login-view">
+  <div class="login-card"><img class="login-brand-logo" src="/images/logo-print.png" alt="Transportadora Print"><h1>Controle de Pátio</h1><p>Localização, checklist e disponibilidade da frota.</p>
+    <form id="loginForm"><label>Usuário<input id="username" autocomplete="username" required></label><label>Senha<div class="password"><input id="password" type="password" autocomplete="current-password" required><button type="button" id="showPassword">◉</button></div></label><button class="primary" type="submit">Entrar no sistema</button><div id="loginError" class="error"></div></form>
+    <small>Equipe de Frotas 2026 · Uso interno</small>
+  </div>
+</section>
+<section id="appView" class="app-view hidden">
+  <header><div class="header-brand"><img class="header-logo" src="/images/logo-print.png" alt="Transportadora Print"><span class="header-title">Controle de Pátio · Diversos</span></div><div class="user"><span id="userName"></span><span id="userRole" class="role"></span><button id="logout" class="ghost">Sair</button></div></header>
+  <main>
+    <div class="hero"><div><span class="eyebrow">VISÃO OPERACIONAL</span><h1>Frota Diversos</h1><p>Localize cada conjunto e acompanhe sua liberação.</p></div><button id="newVehicle" class="primary">＋ Cadastrar veículo</button></div>
+    <div id="metrics" class="metrics"></div>
+    <nav id="yardTabs" class="yard-tabs"></nav>
+    <section class="toolbar"><div class="search">⌕ <input id="search" placeholder="Buscar placa, frota, tipo ou posição"></div><select id="statusFilter"><option value="all">Todos os status</option><option value="available">Disponíveis</option><option value="pending">Com pendências</option></select><button id="historyButton" class="secondary">Histórico</button></section>
+    <section id="vehicleGrid" class="vehicle-grid"></section>
+  </main>
+</section>
+<dialog id="vehicleDialog"><form id="vehicleForm" class="dialog-form"><div class="dialog-head"><div><span class="eyebrow">CADASTRO OPERACIONAL</span><h2 id="dialogTitle">Novo veículo</h2></div><button type="button" class="close" data-close>×</button></div><input type="hidden" id="vehicleId"><div class="form-grid">
+  <label>Placa principal<input id="plate" maxlength="8" required placeholder="ABC1D23"></label><label>Marca<select id="brand"><option>Facchini</option><option>Randon</option></select></label><label>Tipo<select id="type"><option>Carreta</option><option>Rodotrem</option><option>Semirreboque</option><option>Dolly</option></select></label><label>Modelo<input id="model" placeholder="Ex.: SRF CF"></label><label>Nº da frota<input id="fleet" placeholder="Ex.: 4012"></label><label>Data de entrada no pátio<input id="enteredAt" type="date" required></label><label>Chassi<input id="chassis"></label><label>RENAVAM<input id="renavam"></label><label>NF<input id="nf" placeholder="Não informado"></label><label>Operação<input id="operation" value="Padrão"></label><label>Estágio<input id="stage" value="Processos"></label><label>Status<input id="status" value="Aguardando linha"></label><label>Pátio<select id="yard"><option>Cajamar</option><option>Jaraguá</option><option>Bandeirantes</option><option>Pátio Superior</option></select></label><label>Posição / vaga<input id="position" placeholder="Ex.: Linha B · vaga 12"></label><label class="span-2">Placas vinculadas ao conjunto<input id="linkedPlates" placeholder="Ex.: ABC1D23 + DEF4G56"></label><label class="span-2">Observações<textarea id="notes" rows="2"></textarea></label></div>
+  <div id="checklistEditor" class="checklist-editor"></div><div class="dialog-actions"><button type="button" id="deleteVehicle" class="danger hidden">Excluir</button><span></span><button type="button" class="secondary" data-close>Cancelar</button><button type="submit" class="primary">Salvar alterações</button></div></form></dialog>
+<dialog id="historyDialog" class="history-dialog"><div class="dialog-head"><div><span class="eyebrow">RASTREABILIDADE</span><h2>Histórico de movimentações</h2></div><button type="button" class="close" data-close-history>×</button></div><div id="historyList" class="history-list"></div></dialog>
+<div id="toast" class="toast"></div><script src="/app.js"></script></body></html>
