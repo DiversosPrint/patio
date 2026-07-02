@@ -2,7 +2,7 @@ services:
   - type: web
     name: patio-diversos-print
     runtime: node
-    plan: starter
+    plan: free
     buildCommand: npm install
     startCommand: npm start
     healthCheckPath: /
@@ -10,12 +10,8 @@ services:
       - key: NODE_VERSION
         value: 20
       - key: DATA_DIR
-        value: /var/data
+        value: /tmp/patio-data
       - key: ADMIN_PASSWORD
         generateValue: true
       - key: COORD_PASSWORD
         generateValue: true
-    disk:
-      name: patio-diversos-data
-      mountPath: /var/data
-      sizeGB: 1

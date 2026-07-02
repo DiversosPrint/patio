@@ -8,8 +8,8 @@ const crypto = require('crypto');
 const PORT = Number(process.env.PORT || 3010);
 const ROOT = __dirname;
 const PUBLIC = path.join(ROOT, 'public');
-const DATA_DIR = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : path.join(ROOT, 'data');
-const DATA_FILE = path.join(DATA_DIR, 'fleet.json');
+let DATA_DIR = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : path.join(ROOT, 'data');
+let DATA_FILE = path.join(DATA_DIR, 'fleet.json');
 const sessions = new Map();
 
 const USERS = {
@@ -27,7 +27,14 @@ function initialData() {
   return { vehicles: [], history: [], updatedAt: new Date().toISOString() };
 }
 function readData() {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
+  try {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  } catch (error) {
+    if (!['EACCES', 'EPERM', 'EROFS'].includes(error.code)) throw error;
+    DATA_DIR = path.join(ROOT, 'data');
+    DATA_FILE = path.join(DATA_DIR, 'fleet.json');
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
   if (!fs.existsSync(DATA_FILE)) fs.writeFileSync(DATA_FILE, JSON.stringify(initialData(), null, 2));
   try { return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')); } catch { return initialData(); }
 }
