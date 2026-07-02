@@ -2,7 +2,7 @@
 const $ = s => document.querySelector(s);
 const yards = ['Todos', 'Cajamar', 'Jaraguá', 'Bandeirantes', 'Pátio Superior'];
 const areaNames = { manutencao: 'Manutenção', borracharia: 'Borracharia', documentacao: 'Documentação' };
-let state = { user: null, vehicles: [], history: [], checklistTemplate: {} }, activeYard = 'Todos';
+let state = { user: null, vehicles: [], history: [], checklistTemplate: {} }, activeYard = 'Todos', activeMetric = 'all';
 
 async function request(url, options = {}) {
   const response = await fetch(url, { credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, ...options });
@@ -25,22 +25,26 @@ function renderMetrics() {
   const pendingArea = area => state.vehicles.filter(v => (v.checklist?.[area] || []).some(i => !['concluido','nao_aplicado'].includes(i.status))).length;
   const oldest = state.vehicles.reduce((best, v) => !best || yardDays(v) > yardDays(best) ? v : best, null);
   const values = [
-    { value: state.vehicles.length, label: 'Veículos na frota', icon: '▣', tone: 'purple' },
-    { value: state.vehicles.filter(v => !v.available).length, label: 'Em preparação', icon: '🛠', tone: 'blue' },
-    { value: state.vehicles.filter(v => v.available).length, label: 'Prontos para operar', icon: '✓', tone: 'green' },
-    { value: oldest ? `${yardDays(oldest)} dias` : '0 dias', label: 'Há mais tempo no pátio', detail: oldest?.plate || 'Nenhum veículo', icon: '⌛', tone: 'orange' },
-    { value: pendingArea('documentacao'), label: 'Documentos pendentes', icon: '▤', tone: 'red', signal: true },
-    { value: pendingArea('borracharia'), label: 'Pendente de pneus', icon: '◉', tone: 'black', signal: true },
-    { value: pendingLabel('Trava do rastreador'), label: 'Trava do rastreador', icon: '⌁', tone: 'cyan', signal: true },
-    { value: pendingLabel('Reparo de baú'), label: 'Reparo de baú pendente', icon: '▱', tone: 'amber', signal: true }
+    { key: 'all', value: state.vehicles.length, label: 'Veículos na frota', icon: '▣', tone: 'purple' },
+    { key: 'preparation', value: state.vehicles.filter(v => !v.available).length, label: 'Em preparação', icon: '🛠', tone: 'blue' },
+    { key: 'ready', value: state.vehicles.filter(v => v.available).length, label: 'Prontos para operar', icon: '✓', tone: 'green' },
+    { key: 'oldest', value: oldest ? `${yardDays(oldest)} dias` : '0 dias', label: 'Há mais tempo no pátio', detail: oldest?.plate || 'Nenhum veículo', icon: '⌛', tone: 'orange' },
+    { key: 'documents', value: pendingArea('documentacao'), label: 'Documentos pendentes', icon: '▤', tone: 'red', signal: true },
+    { key: 'tires', value: pendingArea('borracharia'), label: 'Pendente de pneus', icon: '◉', tone: 'black', signal: true },
+    { key: 'tracker', value: pendingLabel('Trava do rastreador'), label: 'Trava do rastreador', icon: '⌁', tone: 'cyan', signal: true },
+    { key: 'bodyRepair', value: pendingLabel('Reparo de baú'), label: 'Reparo de baú pendente', icon: '▱', tone: 'amber', signal: true }
   ];
-  $('#metrics').innerHTML = values.map(x => `<div class="metric metric-rich ${x.signal && x.value ? 'has-signal' : ''}"><span class="metric-symbol ${x.tone}">${x.icon}</span><div><b>${x.value}</b><span>${x.label}</span>${x.detail ? `<small>${esc(x.detail)}</small>` : ''}</div></div>`).join('');
+  $('#metrics').innerHTML = values.map(x => `<button type="button" class="metric metric-rich ${x.signal && x.value ? 'has-signal' : ''} ${activeMetric === x.key ? 'active' : ''}" data-metric="${x.key}"><span class="metric-symbol ${x.tone}">${x.icon}</span><span class="metric-copy"><b>${x.value}</b><span>${x.label}</span>${x.detail ? `<small>${esc(x.detail)}</small>` : ''}</span>${activeMetric === x.key ? '<em class="active-label">ATIVO</em>' : ''}</button>`).join('');
 }
 function renderYards() { $('#yardTabs').innerHTML = yards.map(y => `<button class="${activeYard === y ? 'active' : ''}" data-yard="${y}">${y} · ${y === 'Todos' ? state.vehicles.length : state.vehicles.filter(v => v.yard === y).length}</button>`).join(''); }
 function plateHtml(v) { return `<div class="plate ${v.plateType}">${esc(v.plate)}</div>`; }
 function filtered() {
   const q = $('#search').value.trim().toLowerCase(), status = $('#statusFilter').value;
-  return state.vehicles.filter(v => (activeYard === 'Todos' || v.yard === activeYard) && (status === 'all' || (status === 'available') === v.available) && [v.plate,v.fleet,v.type,v.position,v.linkedPlates].join(' ').toLowerCase().includes(q));
+  const oldest = state.vehicles.reduce((best, v) => !best || yardDays(v) > yardDays(best) ? v : best, null);
+  const itemPending = (v, label) => Object.values(v.checklist || {}).flat().some(i => i.label === label && !['concluido','nao_aplicado'].includes(i.status));
+  const areaPending = (v, area) => (v.checklist?.[area] || []).some(i => !['concluido','nao_aplicado'].includes(i.status));
+  const metricMatch = v => ({ all: true, preparation: !v.available, ready: v.available, oldest: v.id === oldest?.id, documents: areaPending(v, 'documentacao'), tires: areaPending(v, 'borracharia'), tracker: itemPending(v, 'Trava do rastreador'), bodyRepair: itemPending(v, 'Reparo de baú') })[activeMetric] ?? true;
+  return state.vehicles.filter(v => metricMatch(v) && (activeYard === 'Todos' || v.yard === activeYard) && (status === 'all' || (status === 'available') === v.available) && [v.plate,v.fleet,v.type,v.position,v.linkedPlates].join(' ').toLowerCase().includes(q));
 }
 function renderVehicles() {
   const list = filtered(); $('#vehicleGrid').innerHTML = list.length ? list.map(v => { const t = totals(v), days = yardDays(v); return `<article class="vehicle-card ${v.available ? 'is-ready' : ''}" data-id="${v.id}"><div class="card-hero"><div class="card-flags"><span class="days">${v.available ? '✓' : '◷'} ${days} ${days === 1 ? 'dia' : 'dias'}</span><span class="prep-state">${v.available ? 'Pronto' : 'Em preparação'}</span></div><span class="vehicle-kind">${esc(v.type || 'Carreta')} ${esc((v.brand || '').toUpperCase())}</span><img class="trailer-image" src="/images/${v.brand === 'Randon' ? 'Randon' : 'Facchini'}.png" alt="Carreta ${esc(v.brand)}">${plateHtml(v)}</div><div class="card-body"><div class="stage-box"><span>ESTÁGIO DA PREPARAÇÃO</span><b>${v.available ? 'Pronto para operar' : esc(v.stage || 'Processos')}</b></div><dl class="details"><dt>Próximo</dt><dd>${v.available ? 'Checklist concluído' : esc(v.stage || 'Processos')}</dd><dt>Tipo</dt><dd>${esc(v.type)} ${esc((v.brand || '').toUpperCase())}</dd><dt>Modelo</dt><dd>${esc(v.model || v.type)}</dd><dt>Frota</dt><dd>${esc(v.fleet || '—')}</dd><dt>Chassi</dt><dd>${esc(v.chassis || '—')}</dd><dt>RENAVAM</dt><dd>${esc(v.renavam || '—')}</dd><dt>NF</dt><dd>${esc(v.nf || 'Não informado')}</dd><dt>Operação</dt><dd>${esc(v.operation || 'Padrão')}</dd><dt>Pátio</dt><dd>${esc(v.yard)}</dd><dt>Status</dt><dd>${esc(v.status || 'Aguardando linha')}</dd></dl><div class="progress"><i style="width:${t.pct}%"></i></div><div class="progress-label"><span></span><b>${t.pct}%</b></div><div class="check-badges">${Object.entries(v.checklist || {}).map(([a,i]) => areaBadge(a,i)).join('')}</div><button class="open-checklist">Abrir checklist →</button></div></article>`; }).join('') : '<div class="empty"><h3>Nenhum veículo encontrado</h3><p>Cadastre o primeiro veículo ou altere os filtros.</p></div>';
@@ -62,6 +66,7 @@ $('#showPassword').onclick = () => { $('#password').type = $('#password').type =
 $('#logout').onclick = async () => { await request('/api/logout', { method: 'POST' }); loginScreen(); };
 $('#newVehicle').onclick = () => openVehicle();
 $('#yardTabs').onclick = e => { if (e.target.dataset.yard) { activeYard = e.target.dataset.yard; render(); } };
+$('#metrics').onclick = e => { const card = e.target.closest('[data-metric]'); if (!card) return; activeMetric = activeMetric === card.dataset.metric && activeMetric !== 'all' ? 'all' : card.dataset.metric; render(); };
 $('#search').oninput = renderVehicles; $('#statusFilter').onchange = renderVehicles;
 $('#vehicleGrid').onclick = e => { const card = e.target.closest('[data-id]'); if (card) openVehicle(card.dataset.id); };
 document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => $('#vehicleDialog').close());
