@@ -3,6 +3,7 @@ const $ = s => document.querySelector(s);
 const yards = ['Todos', 'Cajamar', 'Jaraguá', 'Bandeirantes', 'Pátio Superior'];
 const areaNames = { manutencao: 'Manutenção', borracharia: 'Borracharia', documentacao: 'Documentação' };
 let state = { user: null, vehicles: [], history: [], checklistTemplate: {} }, activeYard = 'Todos', activeMetric = 'all';
+let deferredInstallPrompt = null;
 
 async function request(url, options = {}) {
   const response = await fetch(url, { credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, ...options });
@@ -76,5 +77,13 @@ $('#historyButton').onclick = () => { renderHistory(); $('#historyDialog').showM
 $('#backupButton').onclick = async () => { try { const data = await request('/api/backup'); const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }); const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `backup-patio-diversos-${new Date().toISOString().slice(0,10)}.json`; link.click(); URL.revokeObjectURL(link.href); toast('Backup gerado com sucesso.'); } catch (err) { toast(err.message); } };
 $('#restoreButton').onclick = () => $('#restoreFile').click();
 $('#restoreFile').onchange = async event => { const file = event.target.files?.[0]; event.target.value = ''; if (!file) return; if (!confirm(`Restaurar o backup "${file.name}"? Os dados atuais serão substituídos.`)) return; try { const content = JSON.parse(await file.text()); const result = await request('/api/backup/restore', { method: 'POST', body: JSON.stringify(content) }); await load(); toast(`Backup restaurado: ${result.vehicles} veículo(s).`); } catch (err) { toast(err.message === 'Unexpected token' ? 'Arquivo de backup inválido.' : err.message); } };
+
+function isStandalone() { return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true; }
+function updateInstallButton() { $('#installApp').classList.toggle('hidden', isStandalone()); }
+window.addEventListener('beforeinstallprompt', event => { event.preventDefault(); deferredInstallPrompt = event; updateInstallButton(); });
+window.addEventListener('appinstalled', () => { deferredInstallPrompt = null; $('#installApp').classList.add('hidden'); toast('App instalado com sucesso.'); });
+$('#installApp').onclick = async () => { if (deferredInstallPrompt) { deferredInstallPrompt.prompt(); await deferredInstallPrompt.userChoice; deferredInstallPrompt = null; updateInstallButton(); return; } toast('No navegador, abra o menu e escolha “Instalar aplicativo” ou “Adicionar à tela inicial”.'); };
+if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+updateInstallButton();
 
 request('/api/me').then(data => enter(data.user)).catch(loginScreen);

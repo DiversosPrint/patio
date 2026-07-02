@@ -1,0 +1,17 @@
+{
+  "name": "Controle de Pátio Diversos Print",
+  "short_name": "Pátio Diversos",
+  "description": "Localização, checklist e disponibilidade da frota Diversos Print",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#071d3a",
+  "theme_color": "#0759a9",
+  "orientation": "any",
+  "icons": [
+    { "src": "/images/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/images/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "categories": ["business", "utilities"],
+  "lang": "pt-BR"
+}

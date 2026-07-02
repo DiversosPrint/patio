@@ -93,7 +93,7 @@ function serve(req, res) {
   fs.readFile(target, (err, data) => {
     if (err) return json(res, 404, { error: 'Arquivo não encontrado.' });
     const ext = path.extname(target);
-    const types = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.png': 'image/png', '.svg': 'image/svg+xml' };
+    const types = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/manifest+json; charset=utf-8', '.webmanifest': 'application/manifest+json; charset=utf-8', '.png': 'image/png', '.svg': 'image/svg+xml' };
     res.writeHead(200, { 'Content-Type': types[ext] || 'application/octet-stream' }); res.end(data);
   });
 }
