@@ -13,8 +13,8 @@ let DATA_FILE = path.join(DATA_DIR, 'fleet.json');
 const sessions = new Map();
 
 const USERS = {
-  admin: { password: process.env.ADMIN_PASSWORD || 'admin123', name: 'Administrador', role: 'admin' },
-  coordenador: { password: process.env.COORD_PASSWORD || 'coord123', name: 'Coordenador', role: 'coordenador' }
+  admin: { password: process.env.ADMIN_PASSWORD || '1234', name: 'Administrador', role: 'admin' },
+  coordenador: { password: process.env.COORD_PASSWORD || '4321', name: 'Coordenador', role: 'coordenador' }
 };
 
 const CHECKLIST = {
@@ -65,6 +65,7 @@ function currentUser(req) {
   return session.user;
 }
 function clean(value, max = 100) { return String(value || '').trim().slice(0, max); }
+function todayInSaoPaulo() { return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()); }
 function plate(value) { return clean(value, 8).toUpperCase().replace(/[^A-Z0-9]/g, ''); }
 function plateType(value) { return /^[A-Z]{3}\d{4}$/.test(value) ? 'vermelha' : 'mercosul'; }
 function makeChecklist(existing = {}) {
@@ -77,13 +78,22 @@ function available(vehicle) {
   const items = Object.values(vehicle.checklist || {}).flat();
   return items.length > 0 && items.every(x => ['concluido', 'nao_aplicado'].includes(x.status));
 }
+function vehiclePresenceEvents(vehicle) {
+  if (Array.isArray(vehicle.presenceEvents)) return vehicle.presenceEvents;
+  return (Array.isArray(vehicle.dailyChecks) ? vehicle.dailyChecks : []).map(check => ({ ...check, present: true }));
+}
 function decorate(vehicle) {
-  const decorated = { ...vehicle, brand: vehicle.brand || 'Facchini', enteredAt: vehicle.enteredAt || vehicle.createdAt?.slice(0, 10), plateType: plateType(vehicle.plate), checklist: makeChecklist(vehicle.checklist) };
+  const decorated = { ...vehicle, brand: vehicle.brand || 'Facchini', enteredAt: vehicle.enteredAt || vehicle.createdAt?.slice(0, 10), plateType: plateType(vehicle.plate), presenceEvents: vehiclePresenceEvents(vehicle), checklist: makeChecklist(vehicle.checklist) };
   return { ...decorated, available: available(decorated) };
 }
 function audit(data, user, action, vehicle, detail = '') {
-  data.history.unshift({ id: crypto.randomUUID(), at: new Date().toISOString(), user: user.name, action, vehicleId: vehicle.id, plate: vehicle.plate, detail });
-  data.history = data.history.slice(0, 500);
+  data.history.unshift({
+    id: crypto.randomUUID(), at: new Date().toISOString(), user: user.name, action,
+    vehicleId: vehicle.id, plate: vehicle.plate, detail,
+    yard: vehicle.yard || '', position: vehicle.position || '', status: vehicle.status || '',
+    type: vehicle.type || '', enteredAt: vehicle.enteredAt || ''
+  });
+  data.history = data.history.slice(0, 2000);
 }
 function serve(req, res) {
   const url = new URL(req.url, 'http://localhost');
@@ -121,25 +131,58 @@ async function api(req, res, url) {
     if (user.role !== 'admin') return json(res, 403, { error: 'Apenas o administrador pode restaurar backup.' });
     const input = await body(req); const restored = input?.data || input;
     if (!restored || !Array.isArray(restored.vehicles) || !Array.isArray(restored.history)) return json(res, 400, { error: 'Arquivo de backup inválido.' });
-    const safeData = { vehicles: restored.vehicles.map(v => ({ ...v, checklist: makeChecklist(v.checklist) })), history: restored.history.slice(0, 500), updatedAt: new Date().toISOString() };
+    const safeData = { vehicles: restored.vehicles.map(v => ({ ...v, checklist: makeChecklist(v.checklist) })), history: restored.history.slice(0, 2000), updatedAt: new Date().toISOString() };
     saveData(safeData); return json(res, 200, { ok: true, vehicles: safeData.vehicles.length });
   }
   if (req.method === 'POST' && url.pathname === '/api/vehicles') {
     const input = await body(req); const p = plate(input.plate);
     if (!p) return json(res, 400, { error: 'Informe a placa.' });
     if (data.vehicles.some(v => v.plate === p)) return json(res, 409, { error: 'Esta placa já está cadastrada.' });
-    const vehicle = { id: crypto.randomUUID(), plate: p, plateType: plateType(p), type: clean(input.type), brand: clean(input.brand), model: clean(input.model), fleet: clean(input.fleet), chassis: clean(input.chassis), renavam: clean(input.renavam), nf: clean(input.nf), operation: clean(input.operation) || 'Padrão', stage: clean(input.stage) || 'Processos', status: clean(input.status) || 'Aguardando linha', yard: clean(input.yard), position: clean(input.position), linkedPlates: clean(input.linkedPlates, 100).toUpperCase(), notes: clean(input.notes, 500), enteredAt: input.enteredAt || new Date().toISOString().slice(0, 10), checklist: makeChecklist(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+    const createdAt = new Date().toISOString();
+    const vehicle = { id: crypto.randomUUID(), plate: p, plateType: plateType(p), type: clean(input.type), brand: clean(input.brand), model: clean(input.model), fleet: clean(input.fleet), chassis: clean(input.chassis), renavam: clean(input.renavam), nf: clean(input.nf), operation: clean(input.operation) || 'Padrão', stage: clean(input.stage) || 'Processos', status: clean(input.status) || 'Aguardando linha', yard: clean(input.yard), position: clean(input.position), linkedPlates: clean(input.linkedPlates, 100).toUpperCase(), notes: clean(input.notes, 500), enteredAt: input.enteredAt || todayInSaoPaulo(), presenceEvents: [], presenceStartedAt: createdAt, checklist: makeChecklist(), createdAt, updatedAt: createdAt };
     data.vehicles.push(vehicle); audit(data, user, 'Veículo cadastrado', vehicle, vehicle.yard); saveData(data); return json(res, 201, { vehicle: decorate(vehicle) });
+  }
+  const presenceCheckMatch = url.pathname.match(/^\/api\/vehicles\/([^/]+)\/presence-check$/);
+  if (presenceCheckMatch && req.method === 'POST') {
+    const vehicle = data.vehicles.find(v => v.id === presenceCheckMatch[1]);
+    if (!vehicle) return json(res, 404, { error: 'Veículo não encontrado.' });
+    const input = await body(req);
+    const date = clean(input.date, 10) || todayInSaoPaulo();
+    const present = input.present === true || input.present === 'true';
+    vehicle.presenceEvents = vehiclePresenceEvents(vehicle).sort((a, b) => new Date(b.at) - new Date(a.at));
+    const last = vehicle.presenceEvents[0];
+    if (last?.date === date && Boolean(last.present) === present) return json(res, 200, { ok: true, alreadyChecked: true, event: last, vehicle: decorate(vehicle) });
+    const event = { id: crypto.randomUUID(), date, at: new Date().toISOString(), present, user: user.name, yard: vehicle.yard || '', position: vehicle.position || '' };
+    vehicle.presenceEvents.unshift(event);
+    vehicle.presenceEvents = vehicle.presenceEvents.slice(0, 365);
+    if (present) {
+      if (!last?.present) vehicle.presenceStartedAt = event.at;
+      vehicle.presenceEndedAt = null;
+      if (['Em rota', 'Fora do pátio', 'Entregue', 'Liberado'].includes(vehicle.status)) vehicle.status = 'No pátio';
+    } else {
+      vehicle.presenceEndedAt = event.at;
+      vehicle.status = 'Fora do pátio';
+    }
+    vehicle.updatedAt = event.at;
+    audit(data, user, present ? 'Presença confirmada no pátio' : 'Saída confirmada do pátio', vehicle, present ? 'OK · veículo localizado no pátio' : 'Não OK · veículo não localizado no pátio');
+    saveData(data);
+    return json(res, 200, { ok: true, alreadyChecked: false, event, vehicle: decorate(vehicle) });
   }
   const match = url.pathname.match(/^\/api\/vehicles\/([^/]+)$/); const vehicle = match && data.vehicles.find(v => v.id === match[1]);
   if (match && !vehicle) return json(res, 404, { error: 'Veículo não encontrado.' });
   if (vehicle && req.method === 'PUT') {
-    const input = await body(req); const beforeYard = vehicle.yard;
+    const input = await body(req); const before = { yard: vehicle.yard || '', position: vehicle.position || '', status: vehicle.status || '' };
     ['type','brand','model','fleet','chassis','renavam','nf','operation','stage','status','yard','position','linkedPlates','notes'].forEach(k => { if (k in input) vehicle[k] = clean(input[k], k === 'notes' ? 500 : 100); });
     if (input.enteredAt) vehicle.enteredAt = clean(input.enteredAt, 10);
     vehicle.plateType = plateType(vehicle.plate);
     if (input.checklist) vehicle.checklist = makeChecklist(input.checklist);
-    vehicle.updatedAt = new Date().toISOString(); audit(data, user, beforeYard !== vehicle.yard ? 'Pátio alterado' : 'Cadastro atualizado', vehicle, beforeYard !== vehicle.yard ? `${beforeYard} → ${vehicle.yard}` : ''); saveData(data); return json(res, 200, { vehicle: decorate(vehicle) });
+    vehicle.updatedAt = new Date().toISOString();
+    const changes = [];
+    if (before.yard !== vehicle.yard) changes.push(`Pátio: ${before.yard || 'Não informado'} → ${vehicle.yard || 'Não informado'}`);
+    if (before.position !== vehicle.position) changes.push(`Posição: ${before.position || 'Não informada'} → ${vehicle.position || 'Não informada'}`);
+    if (before.status !== vehicle.status) changes.push(`Status: ${before.status || 'Não informado'} → ${vehicle.status || 'Não informado'}`);
+    audit(data, user, changes.length ? 'Movimentação registrada' : 'Cadastro atualizado', vehicle, changes.join(' · '));
+    saveData(data); return json(res, 200, { vehicle: decorate(vehicle) });
   }
   if (vehicle && req.method === 'DELETE') {
     if (user.role !== 'admin') return json(res, 403, { error: 'Apenas o administrador pode excluir.' });

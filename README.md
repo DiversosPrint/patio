@@ -8,7 +8,7 @@ Sistema independente para localização e liberação de carretas e rodotrens.
 2. Execute `npm start`.
 3. Acesse `http://localhost:3010`.
 
-Usuários iniciais: `admin` / `admin123` e `coordenador` / `coord123`. Troque as senhas pelas variáveis indicadas em `.env.example` antes do uso real.
+Usuários iniciais: `admin` / `1234` e `coordenador` / `4321`. As senhas podem ser personalizadas pelas variáveis indicadas em `.env.example`.
 
 ## Hospedagem
 

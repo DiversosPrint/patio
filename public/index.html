@@ -1,22 +1,126 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0759a9"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><link rel="manifest" href="/manifest.json"><link rel="apple-touch-icon" href="/images/icon-192.png"><title>Controle de Pátio Diversos Print</title><link rel="stylesheet" href="/styles.css"><link rel="stylesheet" href="/cards.css"><link rel="stylesheet" href="/theme.css"><link rel="stylesheet" href="/dashboard.css"><link rel="stylesheet" href="/filters.css"><link rel="stylesheet" href="/backup.css"><link rel="stylesheet" href="/pwa.css"></head><body>
-<section id="loginView" class="login-view">
-  <div class="login-card"><img class="login-brand-logo" src="/images/logo-print.png" alt="Transportadora Print"><h1>Controle de Pátio</h1><p>Localização, checklist e disponibilidade da frota.</p>
-    <form id="loginForm"><label>Usuário<input id="username" autocomplete="username" required></label><label>Senha<div class="password"><input id="password" type="password" autocomplete="current-password" required><button type="button" id="showPassword">◉</button></div></label><button class="primary" type="submit">Entrar no sistema</button><div id="loginError" class="error"></div></form>
-    <small>Equipe de Frotas 2026 · Uso interno</small>
-  </div>
-</section>
-<section id="appView" class="app-view hidden">
-  <header><div class="header-brand"><img class="header-logo" src="/images/logo-print.png" alt="Transportadora Print"><span class="header-title">Controle de Pátio · Diversos</span></div><div class="user"><button id="installApp" class="install-app hidden" type="button">▣ Instalar app</button><span id="userName"></span><span id="userRole" class="role"></span><button id="logout" class="ghost">Sair</button></div></header>
-  <main>
-    <div class="hero"><div><span class="eyebrow">VISÃO OPERACIONAL</span><h1>Frota Diversos</h1><p>Localize cada conjunto e acompanhe sua liberação.</p></div><button id="newVehicle" class="primary">＋ Cadastrar veículo</button></div>
-    <div id="metrics" class="metrics"></div>
-    <nav id="yardTabs" class="yard-tabs"></nav>
-    <section class="toolbar"><div class="search">⌕ <input id="search" placeholder="Buscar placa, frota, tipo ou posição"></div><select id="statusFilter"><option value="all">Todos os status</option><option value="available">Disponíveis</option><option value="pending">Com pendências</option></select><div class="toolbar-actions"><button id="historyButton" class="secondary">Histórico</button><button id="backupButton" class="secondary admin-backup">↓ Backup</button><button id="restoreButton" class="secondary admin-backup">↑ Restaurar</button><input id="restoreFile" type="file" accept="application/json,.json" hidden></div></section>
-    <section id="vehicleGrid" class="vehicle-grid"></section>
-  </main>
-</section>
-<dialog id="vehicleDialog"><form id="vehicleForm" class="dialog-form"><div class="dialog-head"><div><span class="eyebrow">CADASTRO OPERACIONAL</span><h2 id="dialogTitle">Novo veículo</h2></div><button type="button" class="close" data-close>×</button></div><input type="hidden" id="vehicleId"><div class="form-grid">
-  <label>Placa principal<input id="plate" maxlength="8" required placeholder="ABC1D23"></label><label>Marca<select id="brand"><option>Facchini</option><option>Randon</option></select></label><label>Tipo<select id="type"><option>Carreta</option><option>Rodotrem</option><option>Semirreboque</option><option>Dolly</option></select></label><label>Modelo<input id="model" placeholder="Ex.: SRF CF"></label><label>Nº da frota<input id="fleet" placeholder="Ex.: 4012"></label><label>Data de entrada no pátio<input id="enteredAt" type="date" required></label><label>Chassi<input id="chassis"></label><label>RENAVAM<input id="renavam"></label><label>NF<input id="nf" placeholder="Não informado"></label><label>Operação<input id="operation" value="Padrão"></label><label>Estágio<input id="stage" value="Processos"></label><label>Status<input id="status" value="Aguardando linha"></label><label>Pátio<select id="yard"><option>Cajamar</option><option>Jaraguá</option><option>Bandeirantes</option><option>Pátio Superior</option></select></label><label>Posição / vaga<input id="position" placeholder="Ex.: Linha B · vaga 12"></label><label class="span-2">Placas vinculadas ao conjunto<input id="linkedPlates" placeholder="Ex.: ABC1D23 + DEF4G56"></label><label class="span-2">Observações<textarea id="notes" rows="2"></textarea></label></div>
-  <div id="checklistEditor" class="checklist-editor"></div><div class="dialog-actions"><button type="button" id="deleteVehicle" class="danger hidden">Excluir</button><span></span><button type="button" class="secondary" data-close>Cancelar</button><button type="submit" class="primary">Salvar alterações</button></div></form></dialog>
-<dialog id="historyDialog" class="history-dialog"><div class="dialog-head"><div><span class="eyebrow">RASTREABILIDADE</span><h2>Histórico de movimentações</h2></div><button type="button" class="close" data-close-history>×</button></div><div id="historyList" class="history-list"></div></dialog>
-<div id="toast" class="toast"></div><script src="/app.js"></script></body></html>
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0b2748">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/images/icon-192.png">
+  <title>Controle Diário de Pátios · Diversos Print</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <section id="loginView" class="login-view">
+    <div class="login-card">
+      <img class="login-brand-logo" src="/images/logo-print.png" alt="Transportadora Print">
+      <span class="login-kicker">OPERAÇÃO DIVERSOS</span>
+      <h1>Controle diário de pátios</h1>
+      <p>Localização, permanência e movimentação da frota em uma única visão.</p>
+      <form id="loginForm">
+        <label>Usuário<input id="username" autocomplete="username" required></label>
+        <label>Senha<div class="password"><input id="password" type="password" autocomplete="current-password" required><button type="button" id="showPassword" aria-label="Mostrar senha">◉</button></div></label>
+        <button class="primary full" type="submit">Entrar no controle</button>
+        <div id="loginError" class="error" role="alert"></div>
+      </form>
+      <small>Equipe de Frotas · Uso interno</small>
+    </div>
+  </section>
+
+  <section id="appView" class="app-view hidden">
+    <header class="app-header">
+      <div class="header-brand"><img src="/images/logo-print.png" alt="Transportadora Print"><div><b>Controle de Pátios</b><span>Operação Diversos</span></div></div>
+      <nav class="view-switch" aria-label="Visões do sistema">
+        <button class="active" data-view="daily">Hoje</button>
+        <button data-view="weekly">Semana</button>
+      </nav>
+      <div class="user"><button id="installApp" class="install-app hidden" type="button">Instalar app</button><span id="userName"></span><span id="userRole" class="role"></span><button id="logout" class="ghost compact">Sair</button></div>
+    </header>
+
+    <main>
+      <section id="dailyView" class="view-panel">
+        <div class="page-heading">
+          <div><span class="eyebrow">CONTROLE OPERACIONAL</span><h1>Movimentação de hoje</h1><p id="todayLabel"></p></div>
+          <button id="newVehicle" class="primary">＋ Registrar veículo</button>
+        </div>
+
+        <section id="dailyMetrics" class="daily-metrics" aria-label="Resumo do dia"></section>
+
+        <section class="control-panel">
+          <div class="panel-title"><div><h2>Veículos nos pátios</h2><p>Posição atual, tempo de permanência e última atualização.</p></div><span id="resultCount" class="result-count"></span></div>
+          <nav id="yardTabs" class="yard-tabs" aria-label="Filtrar por pátio"></nav>
+          <div class="toolbar">
+            <label class="search-box"><span>⌕</span><input id="search" placeholder="Buscar placa, frota, posição ou conjunto"></label>
+            <select id="statusFilter" aria-label="Filtrar por status"><option value="all">Todos os status</option><option value="No pátio">No pátio</option><option value="Aguardando operação">Aguardando operação</option><option value="Em manutenção">Em manutenção</option><option value="Em rota">Em rota / fora</option></select>
+            <div class="toolbar-actions"><button id="historyButton" class="secondary">Histórico</button><button id="backupButton" class="secondary admin-backup">Backup</button><button id="restoreButton" class="secondary admin-backup">Restaurar</button><input id="restoreFile" type="file" accept="application/json,.json" hidden></div>
+          </div>
+          <div id="vehicleTable" class="vehicle-table"></div>
+        </section>
+      </section>
+
+      <section id="weeklyView" class="view-panel hidden">
+        <div class="page-heading weekly-heading">
+          <div><span class="eyebrow">DASHBOARD SEMANAL</span><h1>Comportamento da frota</h1><p id="weekLabel"></p></div>
+          <div class="week-nav"><button id="previousWeek" class="secondary" aria-label="Semana anterior">←</button><button id="currentWeek" class="secondary">Semana atual</button><button id="nextWeek" class="secondary" aria-label="Próxima semana">→</button></div>
+        </div>
+        <section id="weeklyMetrics" class="daily-metrics weekly-metrics"></section>
+        <section class="weekly-grid">
+          <article class="chart-card"><div class="panel-title"><div><h2>Ocupação por dia</h2><p>Quantidade estimada de veículos presentes em cada dia.</p></div></div><div id="occupancyChart" class="occupancy-chart"></div></article>
+          <article class="chart-card movement-card"><div class="panel-title"><div><h2>Movimentações da semana</h2><p>Alterações de pátio, posição ou status.</p></div></div><div id="movementSummary" class="movement-summary"></div></article>
+        </section>
+        <section class="control-panel weekly-table-panel">
+          <div class="panel-title"><div><h2>Semana de cada veículo</h2><p>Cada célula mostra onde o veículo esteve e se houve movimentação.</p></div><label class="compact-filter">Veículo<select id="weeklyVehicleFilter"><option value="all">Todos</option></select></label></div>
+          <div id="weeklyTable" class="weekly-table"></div>
+        </section>
+      </section>
+    </main>
+  </section>
+
+  <dialog id="vehicleDialog">
+    <form id="vehicleForm" class="dialog-form">
+      <div class="dialog-head"><div><span class="eyebrow">REGISTRO OPERACIONAL</span><h2 id="dialogTitle">Novo veículo</h2><p>Atualize a localização para registrar uma movimentação no histórico.</p></div><button type="button" class="close" data-close aria-label="Fechar">×</button></div>
+      <input type="hidden" id="vehicleId">
+      <section class="form-section"><h3>Identificação</h3><div class="form-grid">
+        <label>Placa principal<input id="plate" maxlength="8" required placeholder="ABC1D23"></label>
+        <label>Tipo<select id="type">
+          <optgroup label="Veículos motorizados">
+            <option>Cavalo</option>
+            <option>Van</option>
+            <option>VUC / 3/4</option>
+            <option>Caminhão Truck</option>
+            <option>Caminhão Toco</option>
+            <option>Veículo Visitante</option>
+            <option>Veículo Diretoria</option>
+          </optgroup>
+          <optgroup label="Carretas e implementos">
+            <option>Carreta</option>
+            <option>Rodotrem</option>
+            <option>Semirreboque</option>
+            <option>Dolly</option>
+          </optgroup>
+        </select></label>
+        <label>Nº da frota<input id="fleet" placeholder="Ex.: 4012"></label>
+        <label>Placas do conjunto<input id="linkedPlates" placeholder="Ex.: ABC1D23 + DEF4G56"></label>
+      </div></section>
+      <section class="form-section operational"><h3>Situação no pátio</h3><div class="form-grid">
+        <label>Pátio<select id="yard"><option>Cajamar</option><option>Jaraguá</option><option>Bandeirantes</option><option>Pátio Superior</option></select></label>
+        <label>Posição / vaga<input id="position" placeholder="Ex.: Linha B · vaga 12"></label>
+        <label>Status<select id="status"><option>No pátio</option><option>Aguardando operação</option><option>Em manutenção</option><option>Em rota</option><option>Fora do pátio</option></select></label>
+        <label>Entrada no pátio<input id="enteredAt" type="date" required></label>
+        <label class="span-2">Observações<textarea id="notes" rows="3" placeholder="Informações relevantes para o turno seguinte"></textarea></label>
+      </div></section>
+      <details class="advanced"><summary>Dados complementares do veículo</summary><div class="form-grid advanced-grid">
+        <label>Marca<select id="brand"><option>Facchini</option><option>Randon</option><option>RodoWesley</option><option>Guerra</option><option>Mercedes-Benz</option><option>Volkswagen</option><option>DAF</option><option>Volvo</option><option>Scania</option><option>Outra</option></select></label><label>Modelo<input id="model"></label><label>Chassi<input id="chassis"></label><label>RENAVAM<input id="renavam"></label><label>NF<input id="nf"></label><label>Operação<input id="operation" value="Padrão"></label><input id="stage" type="hidden" value="Controle de pátio">
+      </div></details>
+      <div class="dialog-actions"><button type="button" id="deleteVehicle" class="danger hidden">Excluir</button><span></span><button type="button" class="secondary" data-close>Cancelar</button><button type="submit" class="primary">Salvar registro</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="historyDialog" class="history-dialog"><div class="dialog-head"><div><span class="eyebrow">RASTREABILIDADE</span><h2>Histórico de movimentações</h2><p>Últimos registros efetuados pela equipe.</p></div><button type="button" class="close" data-close-history aria-label="Fechar">×</button></div><div id="historyList" class="history-list"></div></dialog>
+  <dialog id="timelineDialog" class="timeline-dialog"><div class="dialog-head"><div><span class="eyebrow">HISTÓRICO INDIVIDUAL</span><h2 id="timelineTitle">Timeline do veículo</h2><p id="timelineSubtitle"></p></div><button type="button" class="close" data-close-timeline aria-label="Fechar">×</button></div><div id="timelineStats" class="timeline-stats"></div><div id="timelineList" class="timeline-list"></div></dialog>
+  <div id="toast" class="toast" role="status"></div>
+  <script src="/app.js"></script>
+</body>
+</html>
