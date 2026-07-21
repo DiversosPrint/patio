@@ -11,7 +11,7 @@ services:
         value: 20
       - key: DATA_DIR
         value: /tmp/patio-data
-      - key: ADMIN_PASSWORD
-        generateValue: true
-      - key: COORD_PASSWORD
-        generateValue: true
+      - key: PATIO_ADMIN_PASSWORD
+        value: "1234"
+      - key: PATIO_COORD_PASSWORD
+        value: "4321"

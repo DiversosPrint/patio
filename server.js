@@ -13,8 +13,8 @@ let DATA_FILE = path.join(DATA_DIR, 'fleet.json');
 const sessions = new Map();
 
 const USERS = {
-  admin: { password: process.env.ADMIN_PASSWORD || '1234', name: 'Administrador', role: 'admin' },
-  coordenador: { password: process.env.COORD_PASSWORD || '4321', name: 'Coordenador', role: 'coordenador' }
+  admin: { password: process.env.PATIO_ADMIN_PASSWORD || '1234', name: 'Administrador', role: 'admin' },
+  coordenador: { password: process.env.PATIO_COORD_PASSWORD || '4321', name: 'Coordenador', role: 'coordenador' }
 };
 
 const CHECKLIST = {
